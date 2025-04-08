@@ -27,6 +27,7 @@ let verb = build_verb(
     false,
     dimensional_prefixes,
 );
+// => produces "munzu"
 ```
 
 ## Second method: the chain of methods
@@ -44,6 +45,7 @@ let verb =
         .set_object(Some(Person::ThirdSingNonHuman))?
         .set_ventive(Some(Ventive))
         .print();
+// => produces "munzu"
 ```
 
 ## Tests
