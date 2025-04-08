@@ -1,0 +1,35 @@
+12.4.2
+the plural verb is used with a plural subject in intransitive forms 
+and with a plural object in transitive forms; 
+and the singular verb is similarly used with a singular subject or object
+
+12.4.3
+a plural stem can indicate that a single person is performing an action separately on
+several objects.
+A plural stem can indicate that a single person performs the same action several times.
+A plural stem can indicate that several persons perform the same action once.
+
+13.1
+The final person-prefixes have a variety of uses. Depending on the type of verbal form
+(transitive or intransitive, perfective or imperfective), they can express the transitive subject,
+the direct object, or the oblique object.
+
+13.3.1
+The final person-prefixes do not have separate singular and plural forms. For the non-human
+class, this is to be expected, because it never makes a distinction between singular and plural
+forms (§6.2). For the human class, however, the stated absence of distinctive plural forms is
+only partly correct. In fact, there are two basic strategies to indicate a plural where needed.
+Either of them is attested for the entire period covered by the corpus. They are the topic of this
+section. In addition, there is a more restricted strategy, which will be discussed in the following
+section.
+One major strategy only applies to the third person and involves the use of the final personprefix
+non-human {b} for referring to a plural number of persons.
+The second major strategy to indicate a plural is to attach a plural person-suffix to a verbal
+form, in addition to a final person-prefix.
+
+14.2
+When the need arises, there are several strategies to disambiguate a person suffix {en},
+which may stand for the first as well as the second person singular. One strategy is to add an
+indepent personal pronoun, as in example (5); another is to add an enclitic possessive pronoun,
+as in example (7). The latter strategy is restricted to forms with the nominalizing suffix {÷a}
+and hence to subordinate clauses.
