@@ -497,11 +497,12 @@ mod tests {
     }
 
     #[test]
-    fn zu() {
+    fn zu() -> Result<(), String> {
         // He truly knows 22.1 (1)
+        let stem = "zu".to_string();
         let dimensional_prefixes = DimensionalPrefixes::all_false();
         let verb = build_verb(
-            "zu".to_string(),
+            stem.clone(),
             false,
             true,
             Person::ThirdSingHuman,
@@ -515,5 +516,20 @@ mod tests {
             dimensional_prefixes,
         );
         assert_eq!(Ok(String::from("munzu")), verb);
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Some(Person::ThirdSingHuman))
+            .set_object(Some(Person::ThirdSingNonHuman))?
+            .set_ventive(Some(Ventive))
+            .print();
+        assert_eq!(Ok(String::from("munzu")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 }
