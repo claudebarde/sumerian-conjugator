@@ -48,6 +48,8 @@ let verb =
 // => produces "munzu"
 ```
 
+> WARNING: for now, you must set the perfective and transitive properties of the verb before the subject and object to get the right order of prefixes and suffixes.
+
 ## Tests
 
 Every verb form appearing in the tests is found in the Sumerian grammar mentioned earlier.  
@@ -56,4 +58,9 @@ You can run the test with `cargo test`.
 
 ## Scope
 
-The library is meant to be compiled to WASM and used in a web interface (to be announced).
+The library is meant to be compiled to WASM and used in a web interface (to be announced).  
+You can compile it by running this command (after installing `wasm-pack`):
+
+```bash
+wasm-pack build --target web
+```

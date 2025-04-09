@@ -2,10 +2,9 @@ mod lexicon;
 mod tests;
 mod utils;
 use crate::lexicon::{find_verb, VerbAspect, VerbForm};
-use crate::utils::starts_with_consonant;
 
 /*
-    Slot 1 Modal prefix (􀈏a), negative particle, prefix of anteriority, stem (in imperative forms)
+    Slot 1 Modal prefix (ḫa), negative particle, prefix of anteriority, stem (in imperative forms)
     Slot 2 Finite-marker prefix, modal prefixes (all the other)
     Slot 3 Coordinator prefix
     Slot 4 Ventive (cislocative) prefix
@@ -105,8 +104,12 @@ impl FiniteVerbalForm {
         self.is_perfective = false;
         self
     }
-    pub fn set_first_prefix(&mut self, prefix: Option<FirstPrefix>) -> &mut Self {
-        self.slot_1 = prefix;
+    pub fn set_negative(&mut self) -> &mut Self {
+        self.slot_1 = Some(FirstPrefix::Negative);
+        self
+    }
+    pub fn set_modal(&mut self) -> &mut Self {
+        self.slot_1 = Some(FirstPrefix::Modal);
         self
     }
     pub fn set_preformative(&mut self, preformative: Option<Preformative>) -> &mut Self {
@@ -125,8 +128,14 @@ impl FiniteVerbalForm {
         self.slot_9 = Some(AdverbialPrefix::Terminative);
         self
     }
-    pub fn set_ablative(&mut self) -> &mut Self {
-        self.slot_9 = Some(AdverbialPrefix::Ablative);
+    pub fn set_ablative(&mut self, initial_person_prefix: Option<Person>) -> &mut Self {
+        match &initial_person_prefix {
+            Some(_) => {
+                self.slot_9 = Some(AdverbialPrefix::Ablative);
+            }
+            None => self.slot_9 = None,
+        }
+        self.set_initial_person_prefix(initial_person_prefix);
         self
     }
     pub fn set_middle_prefix(&mut self, middle_prefix: Option<MiddlePrefix>) -> &mut Self {
@@ -176,12 +185,14 @@ impl FiniteVerbalForm {
         }
         self
     }
-    pub fn set_comitative(&mut self, comitative_prefix: bool) -> &mut Self {
-        self.slot_8 = if comitative_prefix {
-            Some(ComitativePrefix)
-        } else {
-            None
-        };
+    pub fn set_comitative(&mut self, initial_person_prefix: Option<Person>) -> &mut Self {
+        match &initial_person_prefix {
+            Some(_) => {
+                self.slot_8 = Some(ComitativePrefix);
+            }
+            None => self.slot_8 = None,
+        }
+        self.set_initial_person_prefix(initial_person_prefix);
         self
     }
     pub fn set_adverbial_prefix(&mut self, adverbial_prefix: Option<AdverbialPrefix>) -> &mut Self {
@@ -333,12 +344,18 @@ impl FiniteVerbalForm {
 
         // PREFIXES
         // NEGATIVE PREFIX
-        match self.clone().slot_1 {
+        let has_modal = match self.clone().slot_1 {
             Some(prefix) => match prefix {
-                FirstPrefix::Negative => final_verb.add_negative_prefix(),
-                _ => todo!(),
+                FirstPrefix::Negative => {
+                    final_verb.add_negative_prefix();
+                    false
+                }
+                FirstPrefix::Modal => {
+                    final_verb.add_modal_prefix(None);
+                    true
+                }
             },
-            None => (),
+            None => false,
         };
         // PREFORMATIVE MARKER
         let has_preformative = match self.slot_2.clone() {
@@ -467,28 +484,40 @@ impl FiniteVerbalForm {
         }
 
         if has_preformative {
-            // TODO: 24.3.1 they are never found before a prefix with the shape /CV/.
-            // Instead of a vocalic prefix we then find zero, that is, no preformative at all.
-            // 24.3.2 The prefix {ʔi} may also contract with the verbal stem,
-            // if the latter has an initial glottal stop.
-            match final_verb.find_previous_morphem(1) {
-                // looks for previous morphem, if any
-                Some(morphem) => {
-                    if morphem.ends_with("u") {
-                        final_verb.add_preformative_prefix("u".to_string());
+            if has_modal {
+                // If the verbal form begins with the vocalic prefix /ʔi/ (§24.3),
+                // /ḫa/ contracts with it. The sequence /ḫaʔi/ thus becomes /ḫē/
+                match &self.slot_2 {
+                    Some(Preformative::I) => {
+                        final_verb.add_preformative_prefix("".to_string());
+                        final_verb.add_modal_prefix(Some("ḫē".to_string()));
                     }
+                    _ => (),
                 }
-                None => {
-                    // if no previous morphem, looks for the next morphem
-                    // and checks if it is the stem
-                    match final_verb.find_following_morphem(2) {
-                        // looks for previous morphem, if any
-                        Some((morphem, morphem_name)) => {
-                            if morphem.starts_with("u") && morphem_name == MarkerName::Stem {
-                                final_verb.add_preformative_prefix("u".to_string());
-                            }
+            } else {
+                // TODO: 24.3.1 they are never found before a prefix with the shape /CV/.
+                // Instead of a vocalic prefix we then find zero, that is, no preformative at all.
+                // 24.3.2 The prefix {ʔi} may also contract with the verbal stem,
+                // if the latter has an initial glottal stop.
+                match final_verb.find_previous_morphem(1) {
+                    // looks for previous morphem, if any
+                    Some(morphem) => {
+                        if morphem.ends_with("u") {
+                            final_verb.add_preformative_prefix("u".to_string());
                         }
-                        None => (),
+                    }
+                    None => {
+                        // if no previous morphem, looks for the next morphem
+                        // and checks if it is the stem
+                        match final_verb.find_following_morphem(2) {
+                            // looks for previous morphem, if any
+                            Some((morphem, morphem_name)) => {
+                                if morphem.starts_with("u") && morphem_name == MarkerName::Stem {
+                                    final_verb.add_preformative_prefix("u".to_string());
+                                }
+                            }
+                            None => (),
+                        }
                     }
                 }
             }
@@ -535,7 +564,7 @@ impl FiniteVerbalForm {
                                 Some(_) => {
                                     // has ventive, checks the marker
                                     match self.slot_7.clone() {
-                                        Some(marker) => {
+                                        Some(_) => {
                                             // has a dative marker
                                         }
                                         None => match self.slot_8.clone() {
@@ -553,7 +582,7 @@ impl FiniteVerbalForm {
                                                     final_verb.add_ventive(String::from("m"));
                                                 }
                                                 None => match self.slot_10.clone() {
-                                                    Some(marker) => {
+                                                    Some(_) => {
                                                         // has a locative marker
                                                         todo!("remove initial person prefix with locative marker and ventive")
                                                     }
@@ -620,6 +649,7 @@ pub trait FinalVerbImpl {
     fn add_preformative_prefix(&mut self, preformative: String);
     fn add_final_ps_prefix(&mut self, prefix: String);
     fn add_negative_prefix(&mut self);
+    fn add_modal_prefix(&mut self, prefix: Option<String>);
     fn add_ventive(&mut self, ventive: String);
     fn add_middle_prefix(&mut self, middle_prefix: String);
     fn add_initial_person_prefix(&mut self, prefix: String);
@@ -656,6 +686,12 @@ impl FinalVerbImpl for [String; 15] {
     }
     fn add_negative_prefix(&mut self) {
         self[0] = "nu".to_string();
+    }
+    fn add_modal_prefix(&mut self, prefix: Option<String>) {
+        self[0] = match prefix {
+            Some(prefix) => prefix,
+            None => "ḫa".to_string(),
+        };
     }
     fn add_ventive(&mut self, ventive: String) {
         self[3] = ventive;
