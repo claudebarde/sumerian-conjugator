@@ -14,20 +14,7 @@ pub struct VerbForm<'a> {
     pub plur: VerbAspect<'a>,
 }
 
-pub const VERBFORMS: [VerbForm; 9] = [
-    VerbForm {
-        stem: "gub",
-        meaning: "to stand",
-        transitive: false,
-        sing: VerbAspect {
-            perf: "gub",
-            imperf: "gub",
-        },
-        plur: VerbAspect {
-            perf: "šug",
-            imperf: "šug",
-        },
-    },
+pub const VERBFORMS: [VerbForm; 10] = [
     VerbForm {
         stem: "dug",
         meaning: "to do",
@@ -39,19 +26,6 @@ pub const VERBFORMS: [VerbForm; 9] = [
         plur: VerbAspect {
             perf: "did",
             imperf: "did",
-        },
-    },
-    VerbForm {
-        stem: "re",
-        meaning: "to bring",
-        transitive: true,
-        sing: VerbAspect {
-            perf: "re",
-            imperf: "re",
-        },
-        plur: VerbAspect {
-            perf: "tum",
-            imperf: "tum",
         },
     },
     VerbForm {
@@ -68,16 +42,29 @@ pub const VERBFORMS: [VerbForm; 9] = [
         },
     },
     VerbForm {
-        stem: "tuš",
-        meaning: "to sit",
-        transitive: false,
+        stem: "gi",
+        meaning: "to turn, to send",
+        transitive: true,
         sing: VerbAspect {
-            perf: "tuš",
-            imperf: "dur",
+            perf: "gi",
+            imperf: "gi-gi",
         },
         plur: VerbAspect {
-            perf: "durun",
-            imperf: "durun",
+            perf: "gi",
+            imperf: "gi-gi",
+        },
+    },
+    VerbForm {
+        stem: "gub",
+        meaning: "to stand",
+        transitive: false,
+        sing: VerbAspect {
+            perf: "gub",
+            imperf: "gub",
+        },
+        plur: VerbAspect {
+            perf: "šug",
+            imperf: "šug",
         },
     },
     VerbForm {
@@ -94,16 +81,16 @@ pub const VERBFORMS: [VerbForm; 9] = [
         },
     },
     VerbForm {
-        stem: "tuku",
-        meaning: "to have",
+        stem: "re",
+        meaning: "to bring",
         transitive: true,
         sing: VerbAspect {
-            perf: "tuku",
-            imperf: "tuktuku",
+            perf: "re",
+            imperf: "re",
         },
         plur: VerbAspect {
-            perf: "tuku",
-            imperf: "tuktuku",
+            perf: "tum",
+            imperf: "tum",
         },
     },
     VerbForm {
@@ -117,6 +104,32 @@ pub const VERBFORMS: [VerbForm; 9] = [
         plur: VerbAspect {
             perf: "se",
             imperf: "se",
+        },
+    },
+    VerbForm {
+        stem: "tuku",
+        meaning: "to have",
+        transitive: true,
+        sing: VerbAspect {
+            perf: "tuku",
+            imperf: "tuktuku",
+        },
+        plur: VerbAspect {
+            perf: "tuku",
+            imperf: "tuktuku",
+        },
+    },
+    VerbForm {
+        stem: "tuš",
+        meaning: "to sit",
+        transitive: false,
+        sing: VerbAspect {
+            perf: "tuš",
+            imperf: "dur",
+        },
+        plur: VerbAspect {
+            perf: "durun",
+            imperf: "durun",
         },
     },
     VerbForm {

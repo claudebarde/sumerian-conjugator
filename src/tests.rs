@@ -3,149 +3,85 @@ mod tests {
     use crate::*;
 
     #[test]
-    fn tuku() {
-        // I had it
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            "tuku".to_string(),
-            false,
-            true,
-            Person::FirstSing,
-            Some(Person::ThirdSingNonHuman),
-            None,
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes.clone(),
-        );
-        assert_eq!(Ok(String::from("iʔtuku")), verb);
-        // I have it
-        let verb = build_verb(
-            "tuku".to_string(),
-            false,
-            false,
-            Person::FirstSing,
-            Some(Person::ThirdSingNonHuman),
-            None,
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes.clone(),
-        );
-        assert_eq!(Ok(String::from("ibtuktukun")), verb);
-        // You had me
-        let verb = build_verb(
-            "tuku".to_string(),
-            false,
-            true,
-            Person::SecondSing,
-            Some(Person::FirstSing),
-            None,
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes.clone(),
-        );
-        assert_eq!(Ok(String::from("iitukun")), verb);
-        // They have it
-        let verb = build_verb(
-            "tuku".to_string(),
-            false,
-            false,
-            Person::ThirdPlurHuman,
-            Some(Person::ThirdSingNonHuman),
-            None,
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
-        assert_eq!(Ok(String::from("ibtuktukuš")), verb);
-    }
-
-    #[test]
-    fn ak() {
+    fn ak() -> Result<(), String> {
         let stem = "ak".to_string();
-        // He made it 22.2 (8)
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            None,
-            None,
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_ventive()
+            .print();
         assert_eq!(Ok(String::from("munak")), verb);
         // It was made with it
-        let dimensional_prefixes = DimensionalPrefixes::with_comitative();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            None,
-            Some(false),
-            Some(Preformative::A),
-            Some(Person::ThirdSingNonHuman),
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_comitative(Some(Person::ThirdSingNonHuman))
+            .set_preformative(Some(Preformative::A))
+            .print();
         assert_eq!(Ok(String::from("abdaak")), verb);
         // He made it into it
-        let dimensional_prefixes = DimensionalPrefixes::with_terminative();
-        let verb = build_verb(
-            stem,
-            false,
-            true,
-            Person::ThirdSingHuman,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            Some(Preformative::I),
-            Some(Person::ThirdSingNonHuman),
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .set_terminative(Some(Person::ThirdSingNonHuman))
+            .print();
         assert_eq!(Ok(String::from("ibšinak")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
-    fn bala() {
+    fn bala() -> Result<(), String> {
         // I cross it
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            "bala".to_string(),
-            false,
-            false,
-            Person::FirstSing,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let stem = "bala".to_string();
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(None)
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .print();
         assert_eq!(Ok(String::from("ibbalan")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn daḫ() -> Result<(), String> {
+        let stem = "daḫ".to_string();
+        // I shall add for you 17.2.4 (33)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(None)
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_indirect_object(Person::SecondSing)
+            .set_preformative(Some(Preformative::A))
+            .print();
+        assert_eq!(Ok(String::from("aradaḫen")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
@@ -153,11 +89,11 @@ mod tests {
         // May he say it to him! 25.4.1 (49)
         let stem = "ʔe".to_string();
         let verb = FiniteVerbalForm::from_stem(stem.clone())
-            .is_imperfective()
+            .is_imperfective(None)
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_object(Some(Person::ThirdSingNonHuman))?
-            .set_indirect_object(Some(Person::ThirdSingHuman))
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_indirect_object(Person::ThirdSingHuman)
             .set_preformative(Some(Preformative::I))
             .set_modal()
             .print();
@@ -177,13 +113,13 @@ mod tests {
         // He must let it come out of him 16.2.2 (17)
         let stem = "ʔè".to_string();
         let verb = FiniteVerbalForm::from_stem(stem.clone())
-            .is_imperfective()
+            .is_imperfective(Some(IpfvStem::EdMarker))
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
+            .set_subject(Person::ThirdSingHuman)
             .set_ablative(Some(Person::ThirdSingHuman))
-            .set_ventive(Some(Ventive))
+            .set_ventive()
             .set_modal()
-            .set_ed_marker(Some("d".to_string()))
+            // .set_ed_marker(Some("d".to_string()))
             .print();
 
         assert_eq!(Ok(String::from("ḫamuntaʔède")), verb);
@@ -203,7 +139,7 @@ mod tests {
         let verb = FiniteVerbalForm::from_stem(stem.clone())
             .is_perfective()
             .is_intransitive()
-            .set_subject(Some(Person::ThirdSingHuman))
+            .set_subject(Person::ThirdSingHuman)
             .set_comitative(Some(Person::ThirdSingHuman))
             .set_preformative(Some(Preformative::I))
             .print();
@@ -220,28 +156,21 @@ mod tests {
     #[test]
     fn ĝar() -> Result<(), String> {
         // He placed it from it 16.2.1 (7)
-        let dimensional_prefixes = DimensionalPrefixes::with_ablative();
         let stem = "ĝar".to_string();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            Some(Preformative::I),
-            Some(Person::ThirdSingNonHuman),
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_ablative(Some(Person::ThirdSingNonHuman))
+            .set_preformative(Some(Preformative::I))
+            .print();
         assert_eq!(Ok(String::from("ibtanĝar")), verb);
         // They were placed on it 21.2 (7)
         // let verb = FiniteVerbalForm::from_stem(stem.clone())
         //     .is_perfective()
         //     .is_transitive()
-        //     .set_subject(Some(Person::ThirdSingNonHuman))
+        //     .set_subject(Person::ThirdSingNonHuman))
         //     .set_indirect_object(Some(Person::ThirdSingNonHuman))
         //     .set_middle_prefix(Some(MiddlePrefix))
         //     .print();
@@ -253,54 +182,45 @@ mod tests {
         //     }
         //     Ok(_) => Ok(()),
         // }
-        Ok(())
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
     fn ĝen() -> Result<(), String> {
         let stem = "ĝen".to_string();
         // He came for him 22.6 (68a)
-        let dimensional_prefixes = DimensionalPrefixes::with_terminative();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            None,
-            Some(false),
-            None,
-            Some(Person::ThirdSingHuman),
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_terminative(Some(Person::ThirdSingHuman))
+            .set_ventive()
+            .print();
         assert_eq!(Ok(String::from("munšiĝen")), verb);
         // He came for it 22.6 (68b)
-        let dimensional_prefixes = DimensionalPrefixes::with_terminative();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            None,
-            Some(false),
-            Some(Preformative::I),
-            Some(Person::ThirdSingNonHuman),
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_terminative(Some(Person::ThirdSingNonHuman))
+            .set_ventive()
+            .set_preformative(Some(Preformative::I))
+            .print();
         assert_eq!(Ok(String::from("imšiĝen")), verb);
         // He came to it 17.2.1 (4)
         let verb = FiniteVerbalForm::from_stem(stem.clone())
             .is_perfective()
             .is_intransitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_indirect_object(Some(Person::ThirdSingNonHuman))
+            .set_subject(Person::ThirdSingHuman)
+            .set_indirect_object(Person::ThirdSingNonHuman)
             .set_preformative(Some(Preformative::I))
-            .set_ventive(Some(Ventive))
+            .set_ventive()
             .print();
         assert_eq!(Ok(String::from("immaĝen")), verb);
 
@@ -313,75 +233,89 @@ mod tests {
     }
 
     #[test]
-    fn gub() {
-        // They were caused to stand 21.2 (6)
-        let stem = "gub".to_string();
-        let dimensional_prefixes =
-            DimensionalPrefixes::with_indirect_object(Person::ThirdPlurHuman);
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdPlurNonHuman,
-            None,
-            Some(false),
-            None,
-            None,
-            false,
-            false,
-            true,
-            dimensional_prefixes,
-        );
-        assert_eq!(Ok(String::from("bannēgub")), verb);
+    fn gi() -> Result<(), String> {
+        let stem = "gi".to_string();
+        // He should send him to me 16.2.5 (31)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(Some(IpfvStem::Reduplicate))
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingHuman)?
+            .set_terminative(Some(Person::FirstSing))
+            .set_modal()
+            .print();
+        assert_eq!(Ok(String::from("ḫamuʔšingi-gie")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
-    fn hul() {
+    fn gub() -> Result<(), String> {
+        // They were caused to stand 21.2 (6)
+        let stem = "gub".to_string();
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdPlurNonHuman)
+            .set_indirect_object(Person::ThirdPlurHuman)
+            .set_middle_prefix(Some(MiddlePrefix))
+            .print();
+        assert_eq!(Ok(String::from("bannēgub")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn hul() -> Result<(), String> {
+        let stem = "hul".to_string();
         // He was happy about it 22.6 (67b)
-        let dimensional_prefixes = DimensionalPrefixes::with_comitative();
-        let verb = build_verb(
-            "hul".to_string(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            None,
-            Some(false),
-            Some(Preformative::I),
-            Some(Person::ThirdSingNonHuman),
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_comitative(Some(Person::ThirdSingNonHuman))
+            .set_preformative(Some(Preformative::I))
+            .set_ventive()
+            .print();
         assert_eq!(Ok(String::from("imdahul")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
     fn kar() -> Result<(), String> {
         // He took it away from me 22.2 (12)
         let stem = "kar".to_string();
-        let dimensional_prefixes = DimensionalPrefixes::with_comitative();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            None,
-            Some(Person::FirstSing),
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_comitative(Some(Person::FirstSing))
+            .set_ventive()
+            .print();
         assert_eq!(Ok(String::from("muʔdankar")), verb);
         // He took her away from him 21.2 (4)
         let verb = FiniteVerbalForm::from_stem(stem.clone())
             .is_perfective()
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_object(Some(Person::ThirdSingHuman))?
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingHuman)?
             .set_middle_prefix(Some(MiddlePrefix))
             .set_comitative(Some(Person::ThirdSingHuman))
             .print();
@@ -401,11 +335,23 @@ mod tests {
         let verb = FiniteVerbalForm::from_stem(stem.clone())
             .is_perfective()
             .is_intransitive()
-            .set_subject(Some(Person::ThirdSingNonHuman))
+            .set_subject(Person::ThirdSingNonHuman)
             .set_middle_prefix(Some(MiddlePrefix))
             .set_comitative(Some(Person::SecondSing))
             .print();
         assert_eq!(Ok(String::from("baadakuř")), verb);
+
+        // He let her enter it for him 17.2.2 (15)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_indirect_object(Person::ThirdSingHuman)
+            .set_ventive()
+            .set_locative_in(None)
+            .print();
+        assert_eq!(Ok(String::from("munnaninkuř")), verb);
 
         match verb {
             Err(err) => {
@@ -416,118 +362,244 @@ mod tests {
     }
 
     #[test]
-    fn me() {
-        // I am not
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            "me".to_string(),
-            false,
-            true,
-            Person::FirstSing,
-            None,
-            Some(false),
-            Some(Preformative::I),
-            None,
-            true,
-            false,
-            false,
-            dimensional_prefixes,
-        );
-        assert_eq!(Ok(String::from("nuumen")), verb);
+    fn lá() -> Result<(), String> {
+        let stem = "lá".to_string();
+        // It was weighed out for him 17.2.2 (8)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdSingNonHuman)
+            .set_indirect_object(Person::ThirdSingHuman)
+            .set_preformative(Some(Preformative::A))
+            .print();
+        assert_eq!(Ok(String::from("annalá")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
-    fn rig() {
+    fn me() -> Result<(), String> {
+        let stem = "me".to_string();
+        // I am not
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::FirstSing)
+            .set_negative()
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("nuumen")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn rig() -> Result<(), String> {
         // It was cleared 21.2 (1a)
         let stem = "rig".to_string();
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingNonHuman,
-            None,
-            Some(true),
-            None,
-            None,
-            false,
-            false,
-            true,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingNonHuman)
+            .set_middle_prefix(Some(MiddlePrefix))
+            .print();
         assert_eq!(Ok(String::from("babrig")), verb);
         // It was cleared away
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingNonHuman,
-            None,
-            Some(true),
-            Some(Preformative::I),
-            None,
-            false,
-            true,
-            true,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingNonHuman)
+            .set_middle_prefix(Some(MiddlePrefix))
+            .set_ventive()
+            .set_preformative(Some(Preformative::I))
+            .print();
         assert_eq!(Ok(String::from("immabrig")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
-    fn sug() {
+    fn řu() -> Result<(), String> {
+        let stem = "řu".to_string();
+        // He erected them in it for him 20.1 (1a)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdPlurNonHuman)?
+            .set_indirect_object(Person::ThirdSingHuman)
+            .set_locative_in(None)
+            .set_ventive()
+            .print();
+        assert_eq!(Ok(String::from("munnaninřu")), verb);
+        // He erected it on it 20.1 (1b)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_locative_on(Some(Person::ThirdSingNonHuman))
+            .print();
+        assert_eq!(Ok(String::from("binřu")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn sa() -> Result<(), String> {
+        // He bought her from them 16.2.3 (18)
+        let stem = "sa".to_string();
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingHuman)?
+            .set_preformative(Some(Preformative::I))
+            .set_terminative(Some(Person::ThirdPlurHuman))
+            .print();
+        assert_eq!(Ok(String::from("innēšinsa")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+    #[test]
+    fn sig_sig() -> Result<(), String> {
+        let stem = "sig-sig".to_string();
+        // He put them in it 20.1 (2a)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_ventive()
+            .set_locative_in(None)
+            .print();
+        assert_eq!(Ok(String::from("mininsig-sig")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn sug() -> Result<(), String> {
+        let stem = "sug".to_string();
         // They stood for it 16.2.1 (2)
-        let dimensional_prefixes =
-            DimensionalPrefixes::with_indirect_object(Person::ThirdSingNonHuman);
-        let verb = build_verb(
-            "sug".to_string(),
-            false,
-            true,
-            Person::ThirdPlurHuman,
-            None,
-            Some(false),
-            None,
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdPlurHuman)
+            .set_indirect_object(Person::ThirdSingNonHuman)
+            .print();
         assert_eq!(Ok(String::from("basugeš")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
     fn šum() -> Result<(), String> {
         // He gave to it 17.2.1 (1)
         let stem = "šum".to_string();
-        let dimensional_prefixes =
-            DimensionalPrefixes::with_indirect_object(Person::ThirdSingNonHuman);
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            None,
-            Some(true),
-            None,
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_indirect_object(Person::ThirdSingNonHuman)
+            .print();
         assert_eq!(Ok(String::from("banšum")), verb);
         // He gave it to it 17.2.1 (3)
         let verb = FiniteVerbalForm::from_stem(stem.clone())
-            .is_imperfective()
+            .is_imperfective(None)
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_indirect_object(Some(Person::ThirdSingNonHuman))
+            .set_subject(Person::ThirdSingHuman)
+            .set_indirect_object(Person::ThirdSingNonHuman)
             .set_preformative(Some(Preformative::I))
-            .set_ventive(Some(Ventive))
+            .set_ventive()
             .print();
         assert_eq!(Ok(String::from("immašume")), verb);
+
+        // He gave this to him 17.2.2 (9)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .set_indirect_object(Person::ThirdSingHuman)
+            .print();
+        assert_eq!(Ok(String::from("innanšum")), verb);
+
+        // She gave it to him 17.2.2 (14)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_indirect_object(Person::ThirdSingHuman)
+            .set_ventive()
+            .print();
+        assert_eq!(Ok(String::from("munnanšum")), verb);
+        // He will give it to you 17.2.4 (36)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(None)
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_indirect_object(Person::SecondSing)
+            .print();
+        assert_eq!(Ok(String::from("rabšume")), verb);
+        // Let him give it to you 17.2.4 (37)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(None)
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_indirect_object(Person::SecondSing)
+            .set_modal()
+            .print();
+        assert_eq!(Ok(String::from("ḫarabšume")), verb);
+        // I did not give her to you 17.2.4 (38)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_object(Person::ThirdSingHuman)?
+            .set_indirect_object(Person::SecondSing)
+            .set_negative()
+            .print();
+        assert_eq!(Ok(String::from("nuraʔšum")), verb);
 
         match verb {
             Err(err) => {
@@ -542,12 +614,11 @@ mod tests {
         let stem = "ti".to_string();
         // He will let it approach towards you 17.2.1 (6)
         let verb = FiniteVerbalForm::from_stem(stem.clone())
-            .is_imperfective()
+            .is_imperfective(None)
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_object(Some(Person::ThirdSingNonHuman))?
-            .set_terminative()
-            .set_initial_person_prefix(Some(Person::SecondSing))
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_terminative(Some(Person::SecondSing))
             .set_middle_prefix(Some(MiddlePrefix))
             .print();
         assert_eq!(Ok(String::from("baašibtie")), verb);
@@ -561,75 +632,146 @@ mod tests {
     }
 
     #[test]
-    fn ug() {
-        // He is dying
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            "ug".to_string(),
-            false,
-            false,
-            Person::ThirdSingHuman,
-            None,
-            Some(false),
-            Some(Preformative::I),
-            None,
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
-        assert_eq!(Ok(String::from("uuged")), verb);
+    fn tuku() -> Result<(), String> {
+        let stem = "tuku".to_string();
+        // I had it
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("iʔtuku")), verb);
+        // I have it
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(Some(IpfvStem::Other(String::from("tuktuku"))))
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("ibtuktukun")), verb);
+        // You had me
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::SecondSing)
+            .set_object(Person::FirstSing)?
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("iitukun")), verb);
+        // They have it
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(Some(IpfvStem::Other(String::from("tuktuku"))))
+            .is_transitive()
+            .set_subject(Person::ThirdPlurHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("ibtuktukuš")), verb);
+
+        // You do not have it with me 16.2.5 (30)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::SecondSing)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_comitative(Some(Person::FirstSing))
+            .set_negative()
+            // .set_ventive()
+            .print();
+        assert_eq!(Ok(String::from("numuʔdaatuku")), verb);
+        // He has it with us 16.2.6 (34)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_comitative(Some(Person::FirstPlur))
+            .print();
+        assert_eq!(Ok(String::from("mēdantuku")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
-    fn zig() {
+    fn ug() -> Result<(), String> {
+        // He is dying
+        let stem = "ug".to_string();
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_imperfective(Some(IpfvStem::EdMarker))
+            .is_intransitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_preformative(Some(Preformative::I))
+            .print();
+        assert_eq!(Ok(String::from("uuged")), verb);
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
+    }
+
+    #[test]
+    fn zig() -> Result<(), String> {
+        let stem = "zig".to_string();
         // They were raised from these
-        let dimensional_prefixes = DimensionalPrefixes::with_ablative();
-        let verb = build_verb(
-            "zig".to_string(),
-            false,
-            true,
-            Person::ThirdPlurNonHuman,
-            None,
-            Some(false),
-            Some(Preformative::I),
-            Some(Person::ThirdPlurNonHuman),
-            false,
-            false,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_intransitive()
+            .set_subject(Person::ThirdPlurNonHuman)
+            .set_ablative(Some(Person::ThirdPlurNonHuman))
+            .set_preformative(Some(Preformative::I))
+            .print();
         assert_eq!(Ok(String::from("ibtazig")), verb); // 22.1 (1)
+
+        match verb {
+            Err(err) => {
+                panic!("Test failed: `{}` returned an error: {}", stem, err);
+            }
+            Ok(_) => Ok(()),
+        }
     }
 
     #[test]
     fn zu() -> Result<(), String> {
         // He truly knows 22.1 (1)
         let stem = "zu".to_string();
-        let dimensional_prefixes = DimensionalPrefixes::all_false();
-        let verb = build_verb(
-            stem.clone(),
-            false,
-            true,
-            Person::ThirdSingHuman,
-            Some(Person::ThirdSingNonHuman),
-            Some(true),
-            None,
-            None,
-            false,
-            true,
-            false,
-            dimensional_prefixes,
-        );
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_ventive()
+            .print();
         assert_eq!(Ok(String::from("munzu")), verb);
         let verb = FiniteVerbalForm::from_stem(stem.clone())
             .is_perfective()
             .is_transitive()
-            .set_subject(Some(Person::ThirdSingHuman))
-            .set_object(Some(Person::ThirdSingNonHuman))?
-            .set_ventive(Some(Ventive))
+            .set_subject(Person::ThirdSingHuman)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_ventive()
             .print();
         assert_eq!(Ok(String::from("munzu")), verb);
+        // I have not known it from you 16.2.4 (27)
+        let verb = FiniteVerbalForm::from_stem(stem.clone())
+            .is_perfective()
+            .is_transitive()
+            .set_subject(Person::FirstSing)
+            .set_object(Person::ThirdSingNonHuman)?
+            .set_comitative(Some(Person::SecondSing))
+            .set_negative()
+            .set_ventive()
+            .print();
+        assert_eq!(Ok(String::from("numuudaʔzu")), verb);
 
         match verb {
             Err(err) => {

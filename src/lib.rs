@@ -2,6 +2,7 @@ mod lexicon;
 mod tests;
 mod utils;
 use crate::lexicon::{find_verb, VerbAspect, VerbForm};
+use crate::utils::ends_with_vowel;
 
 /*
     Slot 1 Modal prefix (ḫa), negative particle, prefix of anteriority, stem (in imperative forms)
@@ -100,8 +101,21 @@ impl FiniteVerbalForm {
         self.is_perfective = true;
         self
     }
-    pub fn is_imperfective(&mut self) -> &mut Self {
+    pub fn is_imperfective(&mut self, impf_stem: Option<IpfvStem>) -> &mut Self {
         self.is_perfective = false;
+        if let Some(stem) = impf_stem {
+            match stem {
+                IpfvStem::Reduplicate => {
+                    self.slot_12 = format!("{}-{}", self.slot_12, self.slot_12);
+                }
+                IpfvStem::EdMarker => {
+                    self.slot_13 = Some("ed".to_string());
+                }
+                IpfvStem::Other(stem) => {
+                    self.slot_12 = stem;
+                }
+            }
+        }
         self
     }
     pub fn set_negative(&mut self) -> &mut Self {
@@ -120,12 +134,18 @@ impl FiniteVerbalForm {
         self.slot_3 = coordinator;
         self
     }
-    pub fn set_ventive(&mut self, ventive: Option<Ventive>) -> &mut Self {
-        self.slot_4 = ventive;
+    pub fn set_ventive(&mut self) -> &mut Self {
+        self.slot_4 = Some(Ventive);
         self
     }
-    pub fn set_terminative(&mut self) -> &mut Self {
-        self.slot_9 = Some(AdverbialPrefix::Terminative);
+    pub fn set_terminative(&mut self, initial_person_prefix: Option<Person>) -> &mut Self {
+        match &initial_person_prefix {
+            Some(_) => {
+                self.slot_9 = Some(AdverbialPrefix::Terminative);
+            }
+            None => self.slot_9 = None,
+        }
+        self.set_initial_person_prefix(initial_person_prefix);
         self
     }
     pub fn set_ablative(&mut self, initial_person_prefix: Option<Person>) -> &mut Self {
@@ -165,23 +185,20 @@ impl FiniteVerbalForm {
         }
         self
     }
-    pub fn set_indirect_object(&mut self, dative_prefix: Option<Person>) -> &mut Self {
+    pub fn set_indirect_object(&mut self, dative_prefix: Person) -> &mut Self {
         match dative_prefix {
-            Some(prefix) => match prefix {
-                Person::FirstSing => self.slot_7 = Some(IndirectObjectPrefix::FirstSing),
-                Person::SecondSing => self.slot_7 = Some(IndirectObjectPrefix::SecondSing),
-                Person::ThirdSingHuman => self.slot_7 = Some(IndirectObjectPrefix::ThirdSingHuman),
-                Person::ThirdSingNonHuman => {
-                    self.slot_7 = Some(IndirectObjectPrefix::ThirdSingNonHuman)
-                }
-                Person::FirstPlur => self.slot_7 = Some(IndirectObjectPrefix::FirstPlur),
-                Person::SecondPlur => self.slot_7 = Some(IndirectObjectPrefix::SecondPlur),
-                Person::ThirdPlurHuman => self.slot_7 = Some(IndirectObjectPrefix::ThirdPlurHuman),
-                Person::ThirdPlurNonHuman => {
-                    self.slot_7 = Some(IndirectObjectPrefix::ThirdPlurNonHuman)
-                }
-            },
-            None => self.slot_7 = None,
+            Person::FirstSing => self.slot_7 = Some(IndirectObjectPrefix::FirstSing),
+            Person::SecondSing => self.slot_7 = Some(IndirectObjectPrefix::SecondSing),
+            Person::ThirdSingHuman => self.slot_7 = Some(IndirectObjectPrefix::ThirdSingHuman),
+            Person::ThirdSingNonHuman => {
+                self.slot_7 = Some(IndirectObjectPrefix::ThirdSingNonHuman)
+            }
+            Person::FirstPlur => self.slot_7 = Some(IndirectObjectPrefix::FirstPlur),
+            Person::SecondPlur => self.slot_7 = Some(IndirectObjectPrefix::SecondPlur),
+            Person::ThirdPlurHuman => self.slot_7 = Some(IndirectObjectPrefix::ThirdPlurHuman),
+            Person::ThirdPlurNonHuman => {
+                self.slot_7 = Some(IndirectObjectPrefix::ThirdPlurNonHuman)
+            }
         }
         self
     }
@@ -199,8 +216,20 @@ impl FiniteVerbalForm {
         self.slot_9 = adverbial_prefix;
         self
     }
-    pub fn set_locative_prefix(&mut self, locative_prefix: Option<LocativePrefix>) -> &mut Self {
-        self.slot_10 = locative_prefix;
+    pub fn set_locative_in(&mut self, initial_person: Option<Person>) -> &mut Self {
+        self.slot_10 = match initial_person {
+            Some(_) => Some(LocativePrefix::InWithInitialPerson),
+            None => Some(LocativePrefix::InWithoutInitialPerson),
+        };
+        // self.set_initial_person_prefix(initial_person);
+        self
+    }
+    pub fn set_locative_on(&mut self, initial_person: Option<Person>) -> &mut Self {
+        self.slot_10 = match initial_person {
+            Some(_) => Some(LocativePrefix::OnWithInitialPerson),
+            None => Some(LocativePrefix::OnWithoutInitialPerson),
+        };
+        // self.set_initial_person_prefix(initial_person);
         self
     }
     pub fn set_final_person_prefix(&mut self, final_person_prefix: Option<Person>) -> &mut Self {
@@ -251,60 +280,48 @@ impl FiniteVerbalForm {
         self.slot_15 = subordinator;
         self
     }
-    pub fn set_subject(&mut self, subject: Option<Person>) -> &mut Self {
+    pub fn set_subject(&mut self, subject: Person) -> &mut Self {
         if !self.is_transitive || (self.is_transitive && !self.is_perfective) {
             self.slot_14 = match subject {
-                Some(person) => match person {
-                    Person::FirstSing => Some(FinalPersonSuffix::FirstSingHuman),
-                    Person::SecondSing => Some(FinalPersonSuffix::SecondSingHuman),
-                    Person::ThirdSingHuman => Some(FinalPersonSuffix::ThirdSingHuman),
-                    Person::ThirdSingNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
-                    Person::FirstPlur => Some(FinalPersonSuffix::FirstSingHuman),
-                    Person::SecondPlur => Some(FinalPersonSuffix::SecondSingHuman),
-                    Person::ThirdPlurHuman => Some(FinalPersonSuffix::ThirdSingHuman),
-                    Person::ThirdPlurNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
-                },
-                None => None,
+                Person::FirstSing => Some(FinalPersonSuffix::FirstSingHuman),
+                Person::SecondSing => Some(FinalPersonSuffix::SecondSingHuman),
+                Person::ThirdSingHuman => Some(FinalPersonSuffix::ThirdSingHuman),
+                Person::ThirdSingNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
+                Person::FirstPlur => Some(FinalPersonSuffix::FirstPlurHuman),
+                Person::SecondPlur => Some(FinalPersonSuffix::SecondPlurHuman),
+                Person::ThirdPlurHuman => Some(FinalPersonSuffix::ThirdPlurHuman),
+                Person::ThirdPlurNonHuman => Some(FinalPersonSuffix::ThirdPlurNonHuman),
             };
         } else {
             self.slot_11 = match subject {
-                Some(person) => match person {
-                    Person::FirstSing => Some(FinalPersonPrefix::FirstSingHuman),
-                    Person::SecondSing => Some(FinalPersonPrefix::SecondSingHuman),
-                    Person::ThirdSingHuman => Some(FinalPersonPrefix::ThirdSingHuman),
-                    Person::ThirdSingNonHuman => Some(FinalPersonPrefix::ThirdSingNonHuman),
-                    _ => todo!("subject not implemented for plurals"),
-                },
-                None => None,
+                Person::FirstSing => Some(FinalPersonPrefix::FirstSingHuman),
+                Person::SecondSing => Some(FinalPersonPrefix::SecondSingHuman),
+                Person::ThirdSingHuman => Some(FinalPersonPrefix::ThirdSingHuman),
+                Person::ThirdSingNonHuman => Some(FinalPersonPrefix::ThirdSingNonHuman),
+                _ => todo!("subject not implemented for plurals"),
             };
         }
         self
     }
-    pub fn set_object(&mut self, object: Option<Person>) -> Result<&mut Self, String> {
+    pub fn set_object(&mut self, object: Person) -> Result<&mut Self, String> {
         if self.is_transitive && self.is_perfective {
             self.slot_14 = match object {
-                Some(person) => match person {
-                    Person::FirstSing => Some(FinalPersonSuffix::FirstSingHuman),
-                    Person::SecondSing => Some(FinalPersonSuffix::SecondSingHuman),
-                    Person::ThirdSingHuman => Some(FinalPersonSuffix::ThirdSingHuman),
-                    Person::ThirdSingNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
-                    Person::FirstPlur => Some(FinalPersonSuffix::FirstSingHuman),
-                    Person::SecondPlur => Some(FinalPersonSuffix::SecondSingHuman),
-                    Person::ThirdPlurHuman => Some(FinalPersonSuffix::ThirdSingHuman),
-                    Person::ThirdPlurNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
-                },
-                None => None,
+                Person::FirstSing => Some(FinalPersonSuffix::FirstSingHuman),
+                Person::SecondSing => Some(FinalPersonSuffix::SecondSingHuman),
+                Person::ThirdSingHuman => Some(FinalPersonSuffix::ThirdSingHuman),
+                Person::ThirdSingNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
+                Person::FirstPlur => Some(FinalPersonSuffix::FirstSingHuman),
+                Person::SecondPlur => Some(FinalPersonSuffix::SecondSingHuman),
+                Person::ThirdPlurHuman => Some(FinalPersonSuffix::ThirdSingHuman),
+                Person::ThirdPlurNonHuman => Some(FinalPersonSuffix::ThirdSingNonHuman),
             };
         } else if self.is_transitive && !self.is_perfective {
             self.slot_11 = match object {
-                Some(person) => match person {
-                    Person::FirstSing => Some(FinalPersonPrefix::FirstSingHuman),
-                    Person::SecondSing => Some(FinalPersonPrefix::SecondSingHuman),
-                    Person::ThirdSingHuman => Some(FinalPersonPrefix::ThirdSingHuman),
-                    Person::ThirdSingNonHuman => Some(FinalPersonPrefix::ThirdSingNonHuman),
-                    _ => todo!("object not implemented for plurals"),
-                },
-                None => None,
+                Person::FirstSing => Some(FinalPersonPrefix::FirstSingHuman),
+                Person::SecondSing => Some(FinalPersonPrefix::SecondSingHuman),
+                Person::ThirdSingHuman => Some(FinalPersonPrefix::ThirdSingHuman),
+                Person::ThirdSingNonHuman => Some(FinalPersonPrefix::ThirdSingNonHuman),
+                _ => todo!("object not implemented for plurals"),
             };
         } else {
             return Err("Cannot set object for intransitive verb".to_string());
@@ -331,7 +348,13 @@ impl FiniteVerbalForm {
         }
         // SUFFIXES
         match self.slot_13.clone() {
-            Some(marker) => final_verb.add_ed_marker(marker),
+            Some(marker) => {
+                if ends_with_vowel(&self.slot_12) {
+                    final_verb.add_ed_marker("d".to_string());
+                } else {
+                    final_verb.add_ed_marker(marker)
+                }
+            }
             None => (),
         };
         let has_final_ps_suffix = match self.clone().slot_14 {
@@ -380,7 +403,7 @@ impl FiniteVerbalForm {
             false
         };
         // INITIAL PERSON PREFIX
-        let has_initial_person_prefix = match self.clone().slot_6 {
+        let has_initial_person_prefix = match &self.slot_6 {
             Some(prefix) => {
                 let prefix_output = match prefix {
                     InitialPersonPrefix::FirstSing => "ʔ".to_string(),
@@ -419,6 +442,7 @@ impl FiniteVerbalForm {
         if self.clone().slot_8.is_some() {
             final_verb.add_comitative("da".to_string());
         }
+
         match self.clone().slot_9 {
             // ABLATIVE
             Some(AdverbialPrefix::Ablative) => {
@@ -430,6 +454,21 @@ impl FiniteVerbalForm {
             }
             _ => (),
         }
+        // LOCATIVE PREFIXES
+        let must_update_locative = match self.slot_10.clone() {
+            Some(prefix) => {
+                // 20.1
+                let (prefix_output, result) = match prefix {
+                    LocativePrefix::InWithInitialPerson => ("".to_string(), false),
+                    LocativePrefix::InWithoutInitialPerson => ("ni".to_string(), true),
+                    LocativePrefix::OnWithInitialPerson => ("bi".to_string(), false),
+                    LocativePrefix::OnWithoutInitialPerson => ("e".to_string(), true),
+                };
+                final_verb.add_locative_prefix(prefix_output);
+                result
+            }
+            None => false,
+        };
         // FINAL PERSON PREFIX
         match self.clone().slot_11 {
             Some(prefix) => {
@@ -458,28 +497,39 @@ impl FiniteVerbalForm {
             None => (),
         };
 
-        // 2- Updates the morphems according to their phonologic environments
-        if has_ventive && has_middle_prefix {
-            // 21.2 Only after the ventive prefix (§22.2), {ba} has a slightly different form,
-            // because the /b/ of {ba} assimilates to the preceding /m/ of the ventive.
-            final_verb.add_ventive(String::from("m"));
-            final_verb.add_middle_prefix("ma".to_string());
+        // 2- Usage rules
+        if has_initial_person_prefix {
+            if let Some(InitialPersonPrefix::FirstSing) = self.slot_6.clone() {
+                // 16.2.5 In the texts of our corpus, the ventive prefix {mu} (chapter 17)
+                // is always used before the initial person-prefix /ʔ/ and always has the form /mu/
+                final_verb.add_ventive("mu".to_string());
+            }
         }
-        if has_ventive && has_indirect_object {
-            // 17.2.1 After the ventive prefix (§22.2), the prefix {ba} has a slighly different form,
-            // because the /b/ of {ba} assimilates to the preceding /m/ of the ventive:
-            match self.slot_7.clone() {
-                Some(prefix) => {
-                    match prefix {
-                        IndirectObjectPrefix::ThirdSingNonHuman
-                        | IndirectObjectPrefix::ThirdPlurNonHuman => {
-                            final_verb.add_ventive(String::from("m"));
-                            final_verb.add_indirect_object(String::from("ma"));
-                        }
-                        _ => (),
-                    };
+
+        // 3- Updates the morphems according to their phonologic environments
+        if has_ventive {
+            if has_middle_prefix {
+                // 21.2 Only after the ventive prefix (§22.2), {ba} has a slightly different form,
+                // because the /b/ of {ba} assimilates to the preceding /m/ of the ventive.
+                final_verb.add_ventive(String::from("m"));
+                final_verb.add_middle_prefix("ma".to_string());
+            }
+            if has_indirect_object {
+                // 17.2.1 After the ventive prefix (§22.2), the prefix {ba} has a slighly different form,
+                // because the /b/ of {ba} assimilates to the preceding /m/ of the ventive:
+                match self.slot_7.clone() {
+                    Some(prefix) => {
+                        match prefix {
+                            IndirectObjectPrefix::ThirdSingNonHuman
+                            | IndirectObjectPrefix::ThirdPlurNonHuman => {
+                                final_verb.add_ventive(String::from("m"));
+                                final_verb.add_indirect_object(String::from("ma"));
+                            }
+                            _ => (),
+                        };
+                    }
+                    None => (),
                 }
-                None => (),
             }
         }
 
@@ -617,6 +667,53 @@ impl FiniteVerbalForm {
             }
         }
 
+        if must_update_locative {
+            // 20.1
+            let prefix_output = match &self.slot_10 {
+                Some(LocativePrefix::InWithoutInitialPerson) => match &self.slot_11 {
+                    Some(_) => "ni".to_string(),
+                    None => "n".to_string(),
+                },
+                Some(LocativePrefix::OnWithInitialPerson) => match &self.slot_11 {
+                    Some(_) => "bi".to_string(),
+                    None => "b".to_string(),
+                },
+                Some(LocativePrefix::OnWithoutInitialPerson) => match &self.slot_11 {
+                    Some(_) => "".to_string(),
+                    None => "e".to_string(),
+                },
+                _ => {
+                    // BUG: it may not be the best idea, check later
+                    final_verb[9].clone()
+                }
+            };
+            final_verb.add_locative_prefix(prefix_output);
+        }
+
+        // Updates ventive form
+        // 22.2 Before the indirect-object prefix {ra}, the oblique-object prefix {ri},
+        // and the local prefix {ni}, however, the /u/ is always retained
+        // but may assimilate to the vowel of the following syllable.
+        if has_ventive {
+            match final_verb.find_following_morphem(MarkerName::Ventive.position() + 1) {
+                Some((morphem, marker_name)) => {
+                    if morphem == String::from("ni") && marker_name == MarkerName::LocativePrefix {
+                        final_verb.add_ventive(String::from("mi"));
+                    } else if morphem == String::from("ra")
+                        && marker_name == MarkerName::DativePrefix
+                    {
+                        final_verb.add_ventive(String::from("ma"));
+                    } else {
+                        ()
+                    }
+                }
+                None => (),
+            }
+        }
+
+        // println!("Built verb: {:#?}", self);
+        // println!("Final verb: {:#?}", final_verb);
+
         Ok(final_verb.print())
     }
 }
@@ -639,8 +736,29 @@ pub enum MarkerName {
     FinalPersonSuffix,
     Subordinator,
 }
+impl MarkerName {
+    fn position(&self) -> usize {
+        match self {
+            MarkerName::FirstPrefix => 0,
+            MarkerName::Preformative => 1,
+            MarkerName::Coordinator => 2,
+            MarkerName::Ventive => 3,
+            MarkerName::MiddlePrefix => 4,
+            MarkerName::InitialPronominalPrefix => 5,
+            MarkerName::DativePrefix => 6,
+            MarkerName::ComitativePrefix => 7,
+            MarkerName::AdverbialPrefix => 8,
+            MarkerName::LocativePrefix => 9,
+            MarkerName::FinalPersonPrefix => 10,
+            MarkerName::Stem => 11,
+            MarkerName::EdMarker => 12,
+            MarkerName::FinalPersonSuffix => 13,
+            MarkerName::Subordinator => 14,
+        }
+    }
+}
 
-// pub const FINAL_VERB: [&str; 15] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+// pub const FINAL_VERB: [String; 15] = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
 pub trait FinalVerbImpl {
     fn add_stem(&mut self, new_stem: String);
     fn add_ed_marker(&mut self, marker: String);
@@ -657,8 +775,10 @@ pub trait FinalVerbImpl {
     fn add_comitative(&mut self, comitative: String);
     fn add_terminative(&mut self);
     fn add_ablative(&mut self);
+    fn add_locative_prefix(&mut self, prefix: String);
     fn find_previous_morphem(&self, starting_slot: usize) -> Option<String>;
     fn find_following_morphem(&self, starting_slot: usize) -> Option<(String, MarkerName)>;
+    fn find_first_morpheme(&self) -> Option<String>;
     fn find_final_ps_suffix(&self) -> Option<String>;
     fn name_by_position(position: usize) -> Result<MarkerName, ()>;
 
@@ -714,6 +834,9 @@ impl FinalVerbImpl for [String; 15] {
     fn add_ablative(&mut self) {
         self[8] = "ta".to_string();
     }
+    fn add_locative_prefix(&mut self, prefix: String) {
+        self[9] = prefix;
+    }
     fn find_previous_morphem(&self, starting_slot: usize) -> Option<String> {
         for i in (0..starting_slot).rev() {
             if !self[i].is_empty() {
@@ -729,6 +852,14 @@ impl FinalVerbImpl for [String; 15] {
                     Ok(name) => return Some((self[i].clone(), name)),
                     Err(_) => (),
                 }
+            }
+        }
+        None
+    }
+    fn find_first_morpheme(&self) -> Option<String> {
+        for i in 0..self.len() {
+            if !self[i].is_empty() {
+                return Some(self[i].clone());
             }
         }
         None
@@ -767,6 +898,12 @@ impl FinalVerbImpl for [String; 15] {
 }
 
 type Stem = String;
+
+pub enum IpfvStem {
+    Reduplicate,
+    EdMarker,
+    Other(String),
+}
 
 #[derive(Debug, Clone)]
 pub enum Preformative {
@@ -890,7 +1027,12 @@ pub enum AdverbialPrefix {
 }
 
 #[derive(Debug, Clone)]
-pub struct LocativePrefix;
+pub enum LocativePrefix {
+    InWithInitialPerson,
+    InWithoutInitialPerson,
+    OnWithInitialPerson,
+    OnWithoutInitialPerson,
+}
 
 #[derive(Debug, Clone)]
 pub struct MiddlePrefix;
@@ -914,7 +1056,7 @@ pub enum Person {
 pub struct DimensionalPrefixes {
     pub indirect_object: Option<Person>,
     pub comitative: bool,
-    pub locative: bool,
+    pub locative: Option<LocativePrefix>,
     pub ablative: bool,
     pub terminative: bool,
 }
@@ -923,7 +1065,7 @@ impl DimensionalPrefixes {
         DimensionalPrefixes {
             indirect_object: None,
             comitative: false,
-            locative: false,
+            locative: None,
             ablative: false,
             terminative: false,
         }
@@ -932,16 +1074,16 @@ impl DimensionalPrefixes {
         DimensionalPrefixes {
             indirect_object: None,
             comitative: true,
-            locative: false,
+            locative: None,
             ablative: false,
             terminative: false,
         }
     }
-    pub fn with_locative() -> Self {
+    pub fn with_locative(prefix: LocativePrefix) -> Self {
         DimensionalPrefixes {
             indirect_object: None,
             comitative: false,
-            locative: true,
+            locative: Some(prefix),
             ablative: false,
             terminative: false,
         }
@@ -950,7 +1092,7 @@ impl DimensionalPrefixes {
         DimensionalPrefixes {
             indirect_object: None,
             comitative: false,
-            locative: false,
+            locative: None,
             ablative: true,
             terminative: false,
         }
@@ -959,7 +1101,7 @@ impl DimensionalPrefixes {
         DimensionalPrefixes {
             indirect_object: None,
             comitative: false,
-            locative: false,
+            locative: None,
             ablative: false,
             terminative: true,
         }
@@ -968,294 +1110,9 @@ impl DimensionalPrefixes {
         DimensionalPrefixes {
             indirect_object: Some(indirect_object),
             comitative: false,
-            locative: false,
+            locative: None,
             ablative: false,
             terminative: false,
         }
     }
-}
-
-pub fn build_verb(
-    stem: String,
-    subordinate: bool,
-    is_perfective: bool,
-    subject: Person,
-    object: Option<Person>,
-    is_transitive: Option<bool>, // this is optional because verb may be in the dictionary
-    preformative: Option<Preformative>,
-    initial_person_prefix: Option<Person>,
-    is_negative: bool,
-    has_ventive: bool,
-    has_middle_prefix: bool,
-    dimensional_prefixes: DimensionalPrefixes,
-) -> Result<String, String> {
-    // finds the verb in the lexicon
-    let verb_info = match find_verb(&stem) {
-        Ok(verb) => verb.clone(),
-        Err(_) => match is_transitive {
-            Some(transitive_state) => VerbForm {
-                stem: &stem,
-                meaning: "",
-                transitive: transitive_state,
-                sing: VerbAspect {
-                    perf: &stem,
-                    imperf: &stem,
-                },
-                plur: VerbAspect {
-                    perf: &stem,
-                    imperf: &stem,
-                },
-            },
-            None => Err(
-                "Transitivity must be declared for verbs that are not in the dictionary"
-                    .to_string(),
-            )?,
-        },
-    };
-    let mut verb = {
-        if is_perfective {
-            FiniteVerbalForm::new(
-                verb_info.sing.perf.to_string(),
-                is_perfective,
-                verb_info.transitive,
-            )
-        } else {
-            FiniteVerbalForm::new(
-                verb_info.sing.imperf.to_string(),
-                is_perfective,
-                verb_info.transitive,
-            )
-        }
-    };
-    verb.slot_15 = subordinate;
-    // Copies the preformative prefix
-    verb.slot_2 = preformative;
-    // Adds negative prefix if needed
-    if is_negative {
-        verb.slot_1 = Some(FirstPrefix::Negative);
-    }
-    if has_ventive {
-        verb.slot_4 = Some(Ventive);
-    }
-    if has_middle_prefix {
-        verb.slot_5 = Some(MiddlePrefix);
-    }
-    // DIMENSIONAL PREFIXES
-    if dimensional_prefixes.ablative && dimensional_prefixes.terminative {
-        // cannot be ablative and terminative at the same time
-        return Err("Cannot have ablative and terminative markers at the same time".to_string());
-    }
-    match dimensional_prefixes.indirect_object {
-        None => (),
-        Some(prefix) => match prefix {
-            Person::FirstSing => {
-                verb.slot_7 = Some(IndirectObjectPrefix::FirstSing);
-            }
-            Person::SecondSing => {
-                verb.slot_7 = Some(IndirectObjectPrefix::SecondSing);
-            }
-            Person::ThirdSingHuman => {
-                verb.slot_7 = Some(IndirectObjectPrefix::ThirdSingHuman);
-            }
-            Person::ThirdSingNonHuman => {
-                verb.slot_7 = Some(IndirectObjectPrefix::ThirdSingNonHuman);
-            }
-            Person::FirstPlur => {
-                verb.slot_7 = Some(IndirectObjectPrefix::FirstPlur);
-            }
-            Person::SecondPlur => {
-                verb.slot_7 = Some(IndirectObjectPrefix::SecondPlur);
-            }
-            Person::ThirdPlurHuman => {
-                verb.slot_7 = Some(IndirectObjectPrefix::ThirdPlurHuman);
-            }
-            Person::ThirdPlurNonHuman => {
-                verb.slot_7 = Some(IndirectObjectPrefix::ThirdPlurNonHuman);
-            }
-        },
-    }
-    if dimensional_prefixes.comitative {
-        verb.slot_8 = Some(ComitativePrefix);
-    }
-    if dimensional_prefixes.ablative {
-        verb.slot_9 = Some(AdverbialPrefix::Ablative);
-    }
-    if dimensional_prefixes.terminative {
-        verb.slot_9 = Some(AdverbialPrefix::Terminative);
-    }
-
-    match initial_person_prefix {
-        Some(prefix) => match prefix {
-            Person::FirstSing => {
-                verb.slot_6 = Some(InitialPersonPrefix::FirstSing);
-            }
-            Person::SecondSing => {
-                verb.slot_6 = Some(InitialPersonPrefix::SecondSing);
-            }
-            Person::ThirdSingHuman => {
-                verb.slot_6 = Some(InitialPersonPrefix::ThirdSingHuman);
-            }
-            Person::ThirdSingNonHuman => {
-                verb.slot_6 = Some(InitialPersonPrefix::ThirdSingNonHuman);
-            }
-            Person::FirstPlur => {
-                verb.slot_6 = Some(InitialPersonPrefix::FirstPlur);
-            }
-            Person::SecondPlur => {
-                verb.slot_6 = Some(InitialPersonPrefix::SecondPlur);
-            }
-            Person::ThirdPlurHuman => {
-                verb.slot_6 = Some(InitialPersonPrefix::ThirdPlurHuman);
-            }
-            Person::ThirdPlurNonHuman => {
-                verb.slot_6 = Some(InitialPersonPrefix::ThirdPlurNonHuman);
-            }
-        },
-        None => (),
-    }
-    // subjects of transitive verbs are prefixes, objects are suffixes
-    // subjects of intransitive verbs are suffixes, no objects
-    match (verb_info.transitive, is_perfective) {
-        // transitive and perfective
-        (true, true) => {
-            match subject {
-                Person::FirstSing => {
-                    verb.slot_11 = Some(FinalPersonPrefix::FirstSingHuman);
-                }
-                Person::SecondSing => {
-                    verb.slot_11 = Some(FinalPersonPrefix::SecondSingHuman);
-                }
-                Person::ThirdSingHuman => {
-                    verb.slot_11 = Some(FinalPersonPrefix::ThirdSingHuman);
-                }
-                Person::ThirdSingNonHuman => {
-                    verb.slot_11 = Some(FinalPersonPrefix::ThirdSingNonHuman);
-                }
-                _ => todo!("missing person markers for transitive perfective verbs"),
-            };
-            if let Some(object) = object {
-                match object {
-                    Person::FirstSing => {
-                        verb.slot_14 = Some(FinalPersonSuffix::FirstSingHuman);
-                    }
-                    Person::SecondSing => {
-                        verb.slot_14 = Some(FinalPersonSuffix::SecondSingHuman);
-                    }
-                    Person::ThirdSingHuman => {
-                        verb.slot_14 = Some(FinalPersonSuffix::ThirdSingHuman);
-                    }
-                    Person::ThirdSingNonHuman => {
-                        verb.slot_14 = Some(FinalPersonSuffix::ThirdSingNonHuman);
-                    }
-                    Person::FirstPlur => {
-                        verb.slot_14 = Some(FinalPersonSuffix::FirstPlurHuman);
-                    }
-                    Person::SecondPlur => {
-                        verb.slot_14 = Some(FinalPersonSuffix::SecondPlurHuman);
-                    }
-                    Person::ThirdPlurHuman => {
-                        verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurHuman);
-                    }
-                    Person::ThirdPlurNonHuman => {
-                        verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurNonHuman);
-                    }
-                }
-            }
-        }
-        // transitive and imperfective
-        (true, false) => {
-            match subject {
-                Person::FirstSing => {
-                    verb.slot_14 = Some(FinalPersonSuffix::FirstSingHuman);
-                }
-                Person::SecondSing => {
-                    verb.slot_14 = Some(FinalPersonSuffix::SecondSingHuman);
-                }
-                Person::ThirdSingHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdSingHuman);
-                }
-                Person::ThirdSingNonHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdSingNonHuman);
-                }
-                Person::FirstPlur => {
-                    verb.slot_14 = Some(FinalPersonSuffix::FirstPlurHuman);
-                }
-                Person::SecondPlur => {
-                    verb.slot_14 = Some(FinalPersonSuffix::SecondPlurHuman);
-                }
-                Person::ThirdPlurHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurHuman);
-                }
-                Person::ThirdPlurNonHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurNonHuman);
-                }
-            };
-            if let Some(object) = object {
-                match object {
-                    Person::FirstSing => {
-                        verb.slot_11 = Some(FinalPersonPrefix::FirstSingHuman);
-                    }
-                    Person::SecondSing => {
-                        verb.slot_11 = Some(FinalPersonPrefix::SecondSingHuman);
-                    }
-                    Person::ThirdSingHuman => {
-                        verb.slot_11 = Some(FinalPersonPrefix::ThirdSingHuman);
-                    }
-                    Person::ThirdSingNonHuman => {
-                        verb.slot_11 = Some(FinalPersonPrefix::ThirdSingNonHuman);
-                    }
-                    _ => todo!(),
-                    // Person::FirstPlur => {
-                    //     verb.slot_11 = Some(FinalPersonPrefix::FirstPlurHuman);
-                    // }
-                    // Person::SecondPlur => {
-                    //     verb.slot_11 = Some(FinalPersonPrefix::SecondPlurHuman);
-                    // }
-                    // Person::ThirdPlurHuman => {
-                    //     verb.slot_11 = Some(FinalPersonPrefix::ThirdPlurHuman);
-                    // }
-                    // Person::ThirdPlurNonHuman => {
-                    //     verb.slot_11 = Some(FinalPersonPrefix::ThirdPlurNonHuman);
-                    // }
-                }
-            }
-        }
-        // intransitive and perfective
-        // intransitive and imperfective
-        (false, true) | (false, false) => {
-            // ed marker
-            if !verb_info.transitive && !is_perfective {
-                verb.slot_13 = Some("ed".to_string());
-            }
-
-            match subject {
-                Person::FirstSing => {
-                    verb.slot_14 = Some(FinalPersonSuffix::FirstSingHuman);
-                }
-                Person::SecondSing => {
-                    verb.slot_14 = Some(FinalPersonSuffix::SecondSingHuman);
-                }
-                Person::ThirdSingHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdSingHuman);
-                }
-                Person::ThirdSingNonHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdSingNonHuman);
-                }
-                Person::FirstPlur => {
-                    verb.slot_14 = Some(FinalPersonSuffix::FirstPlurHuman);
-                }
-                Person::SecondPlur => {
-                    verb.slot_14 = Some(FinalPersonSuffix::SecondPlurHuman);
-                }
-                Person::ThirdPlurHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurHuman);
-                }
-                Person::ThirdPlurNonHuman => {
-                    verb.slot_14 = Some(FinalPersonSuffix::ThirdPlurNonHuman);
-                }
-            }
-        }
-    };
-
-    return verb.print();
 }
